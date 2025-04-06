@@ -5,6 +5,9 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { upload } from 'src/multer';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { JwtAuthGuard } from 'src/middlewares/auth.middleware';
+import { RoleAuthGuard } from 'src/middlewares/role.middleware';
+import { Roles } from 'src/middlewares/type.middleware';
+import { Role } from 'src/enums/role.enum';
 
 @Controller('users')
 export class UserController {
@@ -40,10 +43,10 @@ export class UserController {
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard)
+  @Roles([Role.ADMIN])
+  @UseGuards(JwtAuthGuard, RoleAuthGuard)
   findAll(@Request() req) {
-    let userId = req.user.id;
-    return this.userService.findAll(userId);
+    return this.userService.findAll();
   }
 
   @Patch(':id')
@@ -64,4 +67,7 @@ export class UserController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.userService.remove(id);
   }
+
 }
+
+

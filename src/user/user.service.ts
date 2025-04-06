@@ -9,6 +9,7 @@ import * as path from 'path';
 import {promises as fs} from "fs"
 
 
+
 @Injectable()
 export class UserService {
   constructor(private readonly prisma: PrismaService, private jwt: JwtService) {}
@@ -97,7 +98,7 @@ export class UserService {
     return {user, token};
   }
 
-  async findAll(userId:string) {
+  async findAll() {
     return  this.prisma.user.findMany()
   }
 
@@ -145,4 +146,8 @@ export class UserService {
       where: { id },
     });
   }
+
+
+
+
 }
