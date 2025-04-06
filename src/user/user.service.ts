@@ -1,11 +1,12 @@
 import { BadRequestException, Body, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as nodemailer from 'nodemailer'
 import { RegisterUserDto } from './dto/register-user.dto';
 import * as bcrypt from "bcrypt"
 import { JwtService } from '@nestjs/jwt';
+import * as path from 'path';
+import {promises as fs} from "fs"
 
 
 @Injectable()
@@ -57,25 +58,25 @@ export class UserService {
     if(checkData.code==otp&&checkData.email==email){
       await this.prisma.user.update({where:{email},data:{status:"Active"}})
       await this.prisma.otp.deleteMany({where:{email:email}})
-      return 'Otp verified successfully!'
+      return {message:'Otp verified successfully!'}
     }
   }
 
   async register(createUserDto: RegisterUserDto) {
     let checkUsersStatus = await this.prisma.user.findFirst({where:{email:createUserDto.email}});
     if(!checkUsersStatus){
-      return "Bu email ro'yxatdan o'tmagan"
+      return {error:"Bu email ro'yxatdan o'tmagan"}
     }
     let {fullname, email, password, image, role} = createUserDto
     
     if(checkUsersStatus?.status!=="Active"){
-      return 'Sizning statusingiz aktivlashtirilmagan!'
+      return {error:'Sizning statusingiz aktivlashtirilmagan!'}
     }
     let hash = bcrypt.hashSync(password, 10);
     
     let registeredUser = await this.prisma.user.update({where:{email:email}, data:{fullname, password:hash, image, role}});
     if(registeredUser){
-      return 'User successfully registered!'
+      return {message:'User successfully registered!'}
     }
   }
 
@@ -96,18 +97,50 @@ export class UserService {
     return {user, token};
   }
 
-  async findAll() {
+  async findAll(userId:string) {
     return  this.prisma.user.findMany()
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
+    let  hash = updateUserDto.password?bcrypt.hashSync(updateUserDto.password,10):undefined;
     return this.prisma.user.update({
       where: { id },
-      data: updateUserDto,
+      data:{ ...updateUserDto, password:hash},
     });
   }
 
+  async updateImage(id: number, file: Express.Multer.File) {
+    const checkUser = await this.prisma.user.findFirst({ where: { id } });
+    if (!checkUser) {
+      throw new BadRequestException("User not found");
+    }
+    console.log(checkUser.image);
+  
+    if (checkUser.image) {
+      try {
+        const impath = path.join(__dirname, "../../uploads", checkUser.image);
+        await fs.unlink(impath);
+      } catch (err) {
+        console.error(`Xatolik yuz berdi: ${err.message}`);
+      }
+    }
+  
+    return { image: file.filename };
+  }
+  
   async remove(id: number) {
+    let checkUser = await this.prisma.user.findFirst({where:{id}});
+    if(!checkUser){
+      throw new BadRequestException("Not found user");
+    }
+      if (checkUser.image) {
+        try {
+            let impath = path.join(__dirname, "../../uploads", checkUser.image);
+            await fs.unlink(impath); 
+        } catch (err) {
+            console.error(`Xatolik yuz berdi: ${err.message}`);
+        }
+    }
     return this.prisma.user.delete({
       where: { id },
     });

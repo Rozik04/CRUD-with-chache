@@ -1,9 +1,10 @@
-import {Controller,Get,Post,Body,Patch,Param,Delete,ParseIntPipe, UseInterceptors, UploadedFile,} from '@nestjs/common';
+import {Controller,Get,Post,Body,Patch,Request,Param,Delete,ParseIntPipe, UseInterceptors, UploadedFile, UseGuards,} from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { upload } from 'src/multer';
+import { RegisterUserDto } from './dto/register-user.dto';
+import { JwtAuthGuard } from 'src/middlewares/auth.middleware';
 
 @Controller('users')
 export class UserController {
@@ -20,7 +21,7 @@ export class UserController {
   } 
 
   @Patch("/register")
-  register(@Body() createUserDto: CreateUserDto) {
+  register(@Body() createUserDto: RegisterUserDto) {
     return this.userService.register(createUserDto);
   }
 
@@ -39,8 +40,10 @@ export class UserController {
   }
 
   @Get()
-  findAll() {
-    return this.userService.findAll();
+  @UseGuards(JwtAuthGuard)
+  findAll(@Request() req) {
+    let userId = req.user.id;
+    return this.userService.findAll(userId);
   }
 
   @Patch(':id')
@@ -49,6 +52,12 @@ export class UserController {
     @Body() updateUserDto: UpdateUserDto,
   ) {
     return this.userService.update(id, updateUserDto);
+  }
+
+  @Post(":id")
+  @UseInterceptors(FileInterceptor("image", upload))
+  updateImage(@Param("id", ParseIntPipe) id:number ,@UploadedFile() file: Express.Multer.File){
+    return this.userService.updateImage(id, file)
   }
 
   @Delete(':id')
