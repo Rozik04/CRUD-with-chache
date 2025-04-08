@@ -1,11 +1,13 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';  // Make sure to define this DTO
 import { UpdateProductDto } from './dto/update-product.dto';  // Make sure to define this DTO
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 @Injectable()
 export class ProductService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(CACHE_MANAGER) private cache: Cache, private readonly prisma: PrismaService) {}
 
   async create(createProductDto: CreateProductDto) {
     const { name, price, colorId, categoryId } = createProductDto;

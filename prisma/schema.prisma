@@ -36,7 +36,6 @@ model Color{
   product      Product[]
 }
 
-
 model Product{
   id           Int @id @default(autoincrement())
   name         String

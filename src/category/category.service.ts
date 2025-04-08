@@ -1,11 +1,13 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCategoryDto } from './dto/create-category.dto';  // Make sure to define this DTO
 import { UpdateCategoryDto } from './dto/update-category.dto';  // Make sure to define this DTO
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class CategoryService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(CACHE_MANAGER) private cache: Cache, private readonly prisma: PrismaService) {}
 
   async create(createCategoryDto: CreateCategoryDto) {
     const { name } = createCategoryDto;

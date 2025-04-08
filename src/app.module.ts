@@ -8,9 +8,17 @@ import { ColorModule } from './color/color.module';
 import { ProductModule } from './product/product.module';
 import { CloudinaryModue } from './cloudinary/cloudinary.module';
 import { CloudinaryModule } from 'nestjs-cloudinary';
+import { CacheModule } from '@nestjs/cache-manager';
+import * as redisStore from "cache-manager-ioredis"
 
 @Module({
-  imports: [
+  imports: [CacheModule.register({
+    ttl:60*1000,
+    store: redisStore,
+    host: "localhost",
+    port: 6379,
+    isGlobal:true
+  }),
     CloudinaryModule.forRootAsync({
       useFactory: () => ({
         cloud_name: 'dvjmihcth',
